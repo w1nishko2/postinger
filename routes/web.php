@@ -36,7 +36,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('bots/{bot}/set-webhook', [App\Http\Controllers\BotTestController::class, 'setWebhook'])->name('bots.set-webhook');
     Route::post('bots/{bot}/delete-webhook', [App\Http\Controllers\BotTestController::class, 'deleteWebhook'])->name('bots.delete-webhook');
 });
-
+if (app()->environment('production')) {
+    URL::forceScheme('https');
+}
 // Webhook для Telegram (без авторизации)
 Route::post('/telegram/webhook/{bot}', [TelegramWebhookController::class, 'handle'])
     ->name('telegram.webhook');

@@ -15,14 +15,20 @@ class TelegramService
     /**
      * Отправить текстовое сообщение в канал
      */
-    public function sendMessage(Bot $bot, string $chatId, string $text): array
+    public function sendMessage(Bot $bot, string $chatId, string $text, ?array $keyboard = null): array
     {
         try {
-            $response = Http::post("https://api.telegram.org/bot{$bot->token}/sendMessage", [
+            $params = [
                 'chat_id' => $chatId,
                 'text' => $text,
                 'parse_mode' => 'HTML',
-            ]);
+            ];
+
+            if ($keyboard) {
+                $params['reply_markup'] = json_encode($keyboard);
+            }
+
+            $response = Http::post("https://api.telegram.org/bot{$bot->token}/sendMessage", $params);
 
             $result = $response->json();
             
@@ -280,5 +286,131 @@ class TelegramService
         }
 
         return 'document';
+    }
+
+    /**
+     * Создать inline клавиатуру с кнопками
+     */
+    public function createInlineKeyboard(array $buttons): array
+    {
+        return [
+            'inline_keyboard' => $buttons
+        ];
+    }
+
+    /**
+     * Создать reply клавиатуру с кнопками
+     */
+    public function createReplyKeyboard(array $buttons, bool $resize = true, bool $oneTime = false): array
+    {
+        return [
+            'keyboard' => $buttons,
+            'resize_keyboard' => $resize,
+            'one_time_keyboard' => $oneTime,
+        ];
+    }
+
+    /**
+     * Удалить клавиатуру
+     */
+    public function removeKeyboard(): array
+    {
+        return [
+            'remove_keyboard' => true
+        ];
+    }
+
+    /**
+     * Ответить на callback query
+     */
+    public function answerCallbackQuery(Bot $bot, string $callbackQueryId, ?string $text = null, bool $showAlert = false): array
+    {
+        try {
+            $params = [
+                'callback_query_id' => $callbackQueryId,
+            ];
+
+            if ($text) {
+                $params['text'] = $text;
+                $params['show_alert'] = $showAlert;
+            }
+
+            $response = Http::post("https://api.telegram.org/bot{$bot->token}/answerCallbackQuery", $params);
+
+            $result = $response->json();
+            
+            if (!$result['ok']) {
+                throw new Exception($result['description'] ?? 'Unknown error');
+            }
+
+            return $result;
+        } catch (Exception $e) {
+            Log::error('Telegram answerCallbackQuery error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Редактировать текст сообщения
+     */
+    public function editMessageText(Bot $bot, string $chatId, int $messageId, string $text, ?array $keyboard = null): array
+    {
+        try {
+            $params = [
+                'chat_id' => $chatId,
+                'message_id' => $messageId,
+                'text' => $text,
+                'parse_mode' => 'HTML',
+            ];
+
+            if ($keyboard) {
+                $params['reply_markup'] = json_encode($keyboard);
+            }
+
+            $response = Http::post("https://api.telegram.org/bot{$bot->token}/editMessageText", $params);
+
+            $result = $response->json();
+            
+            if (!$result['ok']) {
+                throw new Exception($result['description'] ?? 'Unknown error');
+            }
+
+            return $result;
+        } catch (Exception $e) {
+            Log::error('Telegram editMessageText error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Отправить сообщение с медиа и кнопками
+     */
+    public function sendPhotoWithKeyboard(Bot $bot, string $chatId, string $photo, ?string $caption = null, ?array $keyboard = null): array
+    {
+        try {
+            $params = [
+                'chat_id' => $chatId,
+                'photo' => $photo,
+                'caption' => $caption,
+                'parse_mode' => 'HTML',
+            ];
+
+            if ($keyboard) {
+                $params['reply_markup'] = json_encode($keyboard);
+            }
+
+            $response = Http::post("https://api.telegram.org/bot{$bot->token}/sendPhoto", $params);
+
+            $result = $response->json();
+            
+            if (!$result['ok']) {
+                throw new Exception($result['description'] ?? 'Unknown error');
+            }
+
+            return $result;
+        } catch (Exception $e) {
+            Log::error('Telegram sendPhoto error: ' . $e->getMessage());
+            throw $e;
+        }
     }
 }
